@@ -387,7 +387,7 @@ body.fullscreen {
   color: var(--foreground);
   resize: none;
   font-family: inherit;
-  font-size: 0.875rem;
+  font-size: 1.8rem;
 }
 
 .message-input::placeholder {
