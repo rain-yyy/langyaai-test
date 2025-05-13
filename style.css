@@ -383,7 +383,7 @@ body.fullscreen {
   background: none;
   border: none;
   outline: none;
-  padding: var(--spacing-2);
+  padding: var(--spacing-3);
   color: var(--foreground);
   resize: none;
   font-family: inherit;
