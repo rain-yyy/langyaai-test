@@ -275,7 +275,7 @@ async function pickerCallback(data) {
         // 清除进度条动画
         clearInterval(progressInterval);
         progressBarFill.style.width = '100%';
-        progressText.textContent = '上传完成！';
+        progressText.textContent = 'upload completed！';
 
         if (response.ok) {
             if (result.status === 'success') {
