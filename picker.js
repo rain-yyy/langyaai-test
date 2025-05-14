@@ -149,7 +149,7 @@ function createPicker() {
     return;
   }
   
-  showDriveStatus('Opening file picker...');
+//   showDriveStatus('Opening file picker...');
   
   try {
     // 使用 DocsView 允许用户看到文件和文件夹，并导航
@@ -186,7 +186,6 @@ async function pickerCallback(data) {
     const documents = data[google.picker.Response.DOCUMENTS];
 
     if (!documents || documents.length === 0) {
-      showDriveStatus('No files selected');
       return;
     }
 
@@ -200,18 +199,62 @@ async function pickerCallback(data) {
 
     // 确保我们有 access token
     if (!accessToken) {
-        showDriveError('Authorization credentials lost, please click the "Connect Google Drive" button again.');
+        if (typeof addSystemMessage === 'function') {
+            addSystemMessage('授权凭证丢失，请重新点击"Connect Google Drive"按钮。');
+        }
         return;
     }
 
     // 获取 User ID
     const userId = getUserId();
     if (!userId) {
-        showDriveError('Unable to get user ID, please ensure you are logged in.');
+        if (typeof addSystemMessage === 'function') {
+            addSystemMessage('无法获取用户ID，请确保您已登录。');
+        }
         return;
     }
 
-    showDriveStatus(`Selected ${selectedFiles.length} files, sending to server for processing...`);
+    // 显示上传进度条（与普通文件上传相同）
+    const uploadProgress = document.querySelector('.upload-progress');
+    const progressBarFill = document.querySelector('.progress-bar-fill');
+    const progressText = document.querySelector('.progress-text');
+    
+    uploadProgress.classList.add('active');
+    progressBarFill.style.width = '0%';
+    progressText.textContent = '准备上传...';
+    
+    // 模拟上传进度
+    let progress = 0;
+    let lastIncrease = 0;
+    
+    const progressInterval = setInterval(() => {
+        // 生成随机增长量(0.5-2之间的随机数)
+        const mintime = 1/selectedFiles.length;
+        const randomIncrease = Math.random() * 1.5 + mintime;
+        
+        // 根据当前进度调整增长速度
+        let adjustedIncrease = randomIncrease;
+        if (progress < 40) {
+            // 开始阶段快速增长
+            adjustedIncrease *= 1;
+        } else if (progress > 70) {
+            // 接近完成时增长变慢
+            adjustedIncrease *= 0.5;
+        }
+        
+        // 确保进度不会超过90%
+        progress = Math.min(99, progress + adjustedIncrease);
+        
+        // 更新显示的进度
+        const displayProgress = Math.floor(progress);
+        progressBarFill.style.width = `${displayProgress}%`;
+        
+        // 根据进度阶段显示不同的消息
+        progressText.textContent = `processing the files... ${displayProgress}%`;
+        
+        // 记录本次增长
+        lastIncrease = adjustedIncrease;
+    }, Math.random() * 300 + 200); // 随机间隔200-500ms
 
     // 调用后端 API
     try {
@@ -228,88 +271,63 @@ async function pickerCallback(data) {
         });
 
         const result = await response.json();
+        
+        // 清除进度条动画
+        clearInterval(progressInterval);
+        progressBarFill.style.width = '100%';
+        progressText.textContent = '上传完成！';
 
         if (response.ok) {
             if (result.status === 'success') {
-                showDriveSuccess(`Successfully processed ${result.files_processed?.length || 0} files. ${result.message || ''}`);
-                displayProcessedFiles(result.files_processed, result.files_failed_processing);
                 if (typeof addSystemMessage === 'function') {
-                    addSystemMessage(`Successfully processed ${result.files_processed?.length || 0} Google Drive files.`);
+                    addSystemMessage(`成功处理了 ${result.files_processed?.length || 0} 个Google Drive文件`);
                 }
                 // 刷新文件列表
                 if (typeof fetchFileList === 'function') {
                     fetchFileList();
                 }
-            } else if (result.status === 'warning') {
-                showDriveStatus(`Folder processing completed with warnings: ${result.message}`);
-                displayProcessedFiles(result.files_processed, result.files_failed_processing);
-            } else if (result.status === 'partial_success' || result.status === 'partial_failure') {
-                showDriveError(`Some files failed to process: ${result.error || result.message || 'Some files failed to import'}`);
-                displayProcessedFiles(result.files_processed, result.files_failed_processing);
+            } else if (result.status === 'warning' || result.status === 'partial_success' || result.status === 'partial_failure') {
+                if (typeof addSystemMessage === 'function') {
+                    addSystemMessage(`部分文件处理成功：${result.files_processed?.length || 0} 个文件已处理，${result.files_failed_processing?.length || 0} 个文件失败`);
+                }
+                // 刷新文件列表
+                if (typeof fetchFileList === 'function') {
+                    fetchFileList();
+                }
             } else {
-                showDriveError(`Unknown issue occurred while processing files: ${result.message || JSON.stringify(result)}`);
+                if (typeof addSystemMessage === 'function') {
+                    addSystemMessage(`文件处理时发生未知问题：${result.message || '未知错误'}`);
+                }
             }
         } else {
-            const errorMsg = result.error || `Server error (status code: ${response.status})`;
-            showDriveError(`Failed to process files: ${errorMsg}`);
+            const errorMsg = result.error || `服务器错误 (状态码: ${response.status})`;
             if (typeof addSystemMessage === 'function') {
-                addSystemMessage(`Error processing Google Drive files: ${errorMsg}`);
+                addSystemMessage(`处理Google Drive文件失败: ${errorMsg}`);
             }
         }
+        
+        // 延迟隐藏进度条
+        setTimeout(() => {
+            uploadProgress.classList.remove('active');
+            progressBarFill.style.width = '0%';
+            progressText.textContent = '上传中...';
+        }, 1000);
     } catch (error) {
-        console.error('Error calling backend API:', error);
-        showDriveError(`Network error occurred while calling backend API: ${error.message}`);
+        console.error('调用后端API时出错:', error);
+        clearInterval(progressInterval);
+        
         if (typeof addSystemMessage === 'function') {
-            addSystemMessage(`Error calling backend API to process Google Drive files: ${error.message}`);
+            addSystemMessage(`调用后端API处理Google Drive文件时发生错误: ${error.message}`);
         }
+        
+        // 隐藏进度条
+        uploadProgress.classList.remove('active');
+        progressBarFill.style.width = '0%';
+        progressText.textContent = '上传中...';
     }
   } else if (data.action === google.picker.Action.CANCEL) {
-    showDriveStatus('Selection cancelled, no files authorized');
-  } else if (data.action === google.picker.Action.LOADED) {
-    // 忽略加载完成事件
-  } else {
-    console.warn('Unknown picker action:', data.action);
+    // 用户取消选择时不显示任何内容
   }
-}
-
-// (可选) 辅助函数，用于显示处理的文件列表
-function displayProcessedFiles(processed, failed) {
-    const statusDiv = document.getElementById('google-drive-status');
-    if (!statusDiv) return;
-
-    const fileListDiv = document.createElement('div');
-    fileListDiv.className = 'drive-file-list';
-    fileListDiv.style.marginTop = '10px';
-    fileListDiv.style.fontSize = '12px';
-
-    let content = '<h4>Processing Details:</h4>';
-
-    if (processed && processed.length > 0) {
-        content += `<h5>Successfully Processed (${processed.length}):</h5><ul>`;
-        processed.forEach(f => {
-            content += `<li>📄 ${f.name} (-> ${f.gcs_path ? 'GCS' : 'Unknown'})</li>`;
-        });
-        content += '</ul>';
-    } else {
-        content += '<div>No files successfully processed.</div>';
-    }
-
-    if (failed && failed.length > 0) {
-        content += `<h5 style="color: red; margin-top: 8px;">Failed to Process (${failed.length}):</h5><ul>`;
-        failed.forEach(f => {
-            content += `<li>📄 ${f.name} (Reason: ${f.reason || 'Unknown'})</li>`;
-        });
-        content += '</ul>';
-    }
-
-    fileListDiv.innerHTML = content;
-    // 将列表添加到状态区域，避免覆盖之前的消息
-    const existingStatus = statusDiv.querySelector('.drive-status, .error-message');
-    if (existingStatus) {
-        existingStatus.insertAdjacentElement('afterend', fileListDiv);
-    } else {
-       statusDiv.appendChild(fileListDiv);
-    }
 }
 
 const getUserId = () => {
@@ -371,14 +389,8 @@ function showDriveError(message) {
   if (statusDiv) {
     statusDiv.innerHTML = `
       <div class="error-message">
-        <i>⚠️</i>
-        <div>
-          <div style="margin-bottom: 8px;">${message}</div>
-          <div style="font-size: 12px; opacity: 0.8;">
-            Current domain: ${window.location.origin}<br>
-            Please ensure this domain is added to the authorized origins list in Google Cloud Console
-          </div>
-        </div>
+        <i class="fas fa-exclamation-circle"></i>
+        <div>${message}</div>
       </div>
     `;
     statusDiv.className = 'drive-status error';
