@@ -122,7 +122,7 @@ function handleDriveAuthClick() {
     
     accessToken = response.access_token;
     console.log('Authorization successful');
-    showDriveSuccess('Successfully authorized! Please select the specific files or folders you want');
+    // showDriveSuccess('Successfully authorized! Please select the specific files or folders you want');
     
     // 创建并显示Google Picker
     await createPicker();
